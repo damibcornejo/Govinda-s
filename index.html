@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Govinda's - Sistema de Caja</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    header {
+      background-color: #6ab04c;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+    }
+    .container {
+      padding: 20px;
+    }
+    .menu-item, .cart {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 15px;
+      margin: 10px 0;
+      background-color: #fff;
+    }
+    .menu-item h3 {
+      margin: 0 0 10px;
+    }
+    .menu-item p {
+      margin: 5px 0;
+    }
+    button {
+      background-color: #6ab04c;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #58a043;
+    }
+    .inventory {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Govinda's</h1>
+  <p>Sistema de Caja</p>
+</header>
+
+<div class="container">
+  <h2>Registro de Pedido</h2>
+  <div class="menu-item">
+    <h3>Hamburguesa Vegana</h3>
+    <p>Inventario: <span id="stock-burger">10</span></p>
+    <p><strong>$8.000 CLP</strong></p>
+    <button onclick="addToOrder('Hamburguesa Vegana', 8000, 'stock-burger')">Añadir al pedido</button>
+  </div>
+  <div class="menu-item">
+    <h3>Ensalada Detox</h3>
+    <p>Inventario: <span id="stock-salad">15</span></p>
+    <p><strong>$6.000 CLP</strong></p>
+    <button onclick="addToOrder('Ensalada Detox', 6000, 'stock-salad')">Añadir al pedido</button>
+  </div>
+  <div class="menu-item">
+    <h3>Pizza Vegana</h3>
+    <p>Inventario: <span id="stock-pizza">5</span></p>
+    <p><strong>$12.000 CLP</strong></p>
+    <button onclick="addToOrder('Pizza Vegana', 12000, 'stock-pizza')">Añadir al pedido</button>
+  </div>
+
+  <div class="cart">
+    <h3>Pedido Actual</h3>
+    <ul id="order-items"></ul>
+    <p><strong>Total: $<span id="total-price">0</span> CLP</strong></p>
+    <button onclick="clearOrder()">Limpiar Pedido</button>
+    <button onclick="finalizeOrder()">Finalizar Pedido</button>
+  </div>
+</div>
+
+<script>
+  let totalPrice = 0;
+
+  function addToOrder(item, price, stockId) {
+    const stockElement = document.getElementById(stockId);
+    let stock = parseInt(stockElement.textContent);
+
+    if (stock > 0) {
+      // Restar del inventario
+      stock--;
+      stockElement.textContent = stock;
+
+      // Agregar al pedido
+      const orderItems = document.getElementById('order-items');
+      const newItem = document.createElement('li');
+      newItem.textContent = `${item} - $${price.toLocaleString('es-CL')} CLP`;
+      orderItems.appendChild(newItem);
+
+      // Actualizar el total
+      totalPrice += price;
+      document.getElementById('total-price').textContent = totalPrice.toLocaleString('es-CL');
+    } else {
+      alert('No queda stock disponible para este producto.');
+    }
+  }
+
+  function clearOrder() {
+    document.getElementById('order-items').innerHTML = '';
+    document.getElementById('total-price').textContent = '0';
+    totalPrice = 0;
+  }
+
+  function finalizeOrder() {
+    const orderItems = document.getElementById('order-items').children;
+    if (orderItems.length === 0) {
+      alert('El pedido está vacío. Agrega productos antes de finalizar.');
+      return;
+    }
+
+    let orderSummary = "Resumen del Pedido:\n";
+    for (let item of orderItems) {
+      orderSummary += `- ${item.textContent}\n`;
+    }
+    orderSummary += `\nTotal: $${totalPrice.toLocaleString('es-CL')} CLP`;
+
+    alert(orderSummary);
+
+    // Reiniciar pedido
+    clearOrder();
+  }
+</script>
+
+</body>
+</html>
+
