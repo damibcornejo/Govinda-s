@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Govinda's - Sistema de Caja</title>
+  <title>Sistema de Gestión</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -17,21 +17,26 @@
       text-align: center;
       padding: 10px 0;
     }
+    nav {
+      display: flex;
+      justify-content: center;
+      background-color: #333;
+      padding: 10px;
+    }
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: bold;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
     .container {
       padding: 20px;
     }
-    .menu-item, .cart {
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      padding: 15px;
-      margin: 10px 0;
-      background-color: #fff;
-    }
-    .menu-item h3 {
-      margin: 0 0 10px;
-    }
-    .menu-item p {
-      margin: 5px 0;
+    .hidden {
+      display: none;
     }
     button {
       background-color: #6ab04c;
@@ -40,104 +45,164 @@
       padding: 10px 15px;
       cursor: pointer;
       border-radius: 5px;
+      margin-top: 10px;
     }
     button:hover {
       background-color: #58a043;
     }
-    .inventory {
-      margin-top: 20px;
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    ul li {
+      margin: 5px 0;
     }
   </style>
 </head>
 <body>
 
 <header>
-  <h1>Govinda's</h1>
-  <p>Sistema de Caja</p>
+  <h1>Sistema de Gestión</h1>
 </header>
+<nav>
+  <a href="#" onclick="showPage('inventory')">Inventario</a>
+  <a href="#" onclick="showPage('orders')">Pedido</a>
+  <a href="#" onclick="showPage('history')">Historial</a>
+</nav>
 
-<div class="container">
-  <h2>Registro de Pedido</h2>
-  <div class="menu-item">
-    <h3>Hamburguesa Vegana</h3>
-    <p>Inventario: <span id="stock-burger">10</span></p>
-    <p><strong>$8.000 CLP</strong></p>
-    <button onclick="addToOrder('Hamburguesa Vegana', 8000, 'stock-burger')">Añadir al pedido</button>
-  </div>
-  <div class="menu-item">
-    <h3>Ensalada Detox</h3>
-    <p>Inventario: <span id="stock-salad">15</span></p>
-    <p><strong>$6.000 CLP</strong></p>
-    <button onclick="addToOrder('Ensalada Detox', 6000, 'stock-salad')">Añadir al pedido</button>
-  </div>
-  <div class="menu-item">
-    <h3>Pizza Vegana</h3>
-    <p>Inventario: <span id="stock-pizza">5</span></p>
-    <p><strong>$12.000 CLP</strong></p>
-    <button onclick="addToOrder('Pizza Vegana', 12000, 'stock-pizza')">Añadir al pedido</button>
-  </div>
+<div id="inventory" class="container">
+  <h2>Inventario</h2>
+  <ul id="inventory-list"></ul>
+  <button onclick="addInventoryItem()">Agregar Producto</button>
+</div>
 
-  <div class="cart">
-    <h3>Pedido Actual</h3>
-    <ul id="order-items"></ul>
-    <p><strong>Total: $<span id="total-price">0</span> CLP</strong></p>
-    <button onclick="clearOrder()">Limpiar Pedido</button>
-    <button onclick="finalizeOrder()">Finalizar Pedido</button>
-  </div>
+<div id="orders" class="container hidden">
+  <h2>Pedido</h2>
+  <ul id="order-list"></ul>
+  <p>Total: $<span id="total-order">0</span> CLP</p>
+  <button onclick="finalizeOrder()">Finalizar Pedido</button>
+  <button onclick="clearOrder()">Limpiar Pedido</button>
+</div>
+
+<div id="history" class="container hidden">
+  <h2>Historial de Pedidos</h2>
+  <ul id="order-history"></ul>
 </div>
 
 <script>
-  let totalPrice = 0;
+  let inventory = JSON.parse(localStorage.getItem('inventory')) || [];
+  let order = [];
+  let history = JSON.parse(localStorage.getItem('history')) || [];
 
-  function addToOrder(item, price, stockId) {
-    const stockElement = document.getElementById(stockId);
-    let stock = parseInt(stockElement.textContent);
+  // Mostrar sección
+  function showPage(page) {
+    document.querySelectorAll('.container').forEach(container => container.classList.add('hidden'));
+    document.getElementById(page).classList.remove('hidden');
+    if (page === 'inventory') renderInventory();
+    if (page === 'history') renderHistory();
+  }
 
-    if (stock > 0) {
-      // Restar del inventario
-      stock--;
-      stockElement.textContent = stock;
+  // Renderizar inventario
+  function renderInventory() {
+    const inventoryList = document.getElementById('inventory-list');
+    inventoryList.innerHTML = '';
+    inventory.forEach((item, index) => {
+      const li = document.createElement('li');
+      li.textContent = `${item.name} - Stock: ${item.stock}`;
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Eliminar';
+      deleteButton.onclick = () => deleteInventoryItem(index);
+      li.appendChild(deleteButton);
+      inventoryList.appendChild(li);
+    });
+  }
 
-      // Agregar al pedido
-      const orderItems = document.getElementById('order-items');
-      const newItem = document.createElement('li');
-      newItem.textContent = `${item} - $${price.toLocaleString('es-CL')} CLP`;
-      orderItems.appendChild(newItem);
+  // Agregar producto al inventario
+  function addInventoryItem() {
+    const name = prompt('Nombre del producto:');
+    const stock = parseInt(prompt('Cantidad en inventario:'), 10);
+    if (name && !isNaN(stock)) {
+      inventory.push({ name, stock });
+      saveInventory();
+      renderInventory();
+    }
+  }
 
-      // Actualizar el total
-      totalPrice += price;
-      document.getElementById('total-price').textContent = totalPrice.toLocaleString('es-CL');
+  // Eliminar producto del inventario
+  function deleteInventoryItem(index) {
+    inventory.splice(index, 1);
+    saveInventory();
+    renderInventory();
+  }
+
+  // Guardar inventario en localStorage
+  function saveInventory() {
+    localStorage.setItem('inventory', JSON.stringify(inventory));
+  }
+
+  // Agregar producto al pedido
+  function addToOrder(index) {
+    const item = inventory[index];
+    if (item.stock > 0) {
+      order.push(item.name);
+      item.stock--;
+      saveInventory();
+      renderInventory();
+      renderOrder();
     } else {
-      alert('No queda stock disponible para este producto.');
+      alert('Sin stock disponible.');
     }
   }
 
-  function clearOrder() {
-    document.getElementById('order-items').innerHTML = '';
-    document.getElementById('total-price').textContent = '0';
-    totalPrice = 0;
+  // Renderizar pedido
+  function renderOrder() {
+    const orderList = document.getElementById('order-list');
+    const totalOrder = document.getElementById('total-order');
+    orderList.innerHTML = '';
+    let total = 0;
+    order.forEach(product => {
+      total += 1; // Simula el precio
+      const li = document.createElement('li');
+      li.textContent = product;
+      orderList.appendChild(li);
+    });
+    totalOrder.textContent = total.toString();
   }
 
+  // Finalizar pedido
   function finalizeOrder() {
-    const orderItems = document.getElementById('order-items').children;
-    if (orderItems.length === 0) {
-      alert('El pedido está vacío. Agrega productos antes de finalizar.');
-      return;
-    }
-
-    let orderSummary = "Resumen del Pedido:\n";
-    for (let item of orderItems) {
-      orderSummary += `- ${item.textContent}\n`;
-    }
-    orderSummary += `\nTotal: $${totalPrice.toLocaleString('es-CL')} CLP`;
-
-    alert(orderSummary);
-
-    // Reiniciar pedido
-    clearOrder();
+    history.push([...order]);
+    order = [];
+    saveHistory();
+    renderOrder();
+    alert('Pedido finalizado');
   }
+
+  // Guardar historial en localStorage
+  function saveHistory() {
+    localStorage.setItem('history', JSON.stringify(history));
+  }
+
+  // Renderizar historial
+  function renderHistory() {
+    const historyList = document.getElementById('order-history');
+    historyList.innerHTML = '';
+    history.forEach((order, index) => {
+      const li = document.createElement('li');
+      li.textContent = `Pedido ${index + 1}: ${order.join(', ')}`;
+      historyList.appendChild(li);
+    });
+  }
+
+  // Limpiar pedido
+  function clearOrder() {
+    order = [];
+    renderOrder();
+  }
+
+  // Inicializar
+  showPage('inventory');
 </script>
 
 </body>
 </html>
-
